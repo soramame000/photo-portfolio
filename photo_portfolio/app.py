@@ -254,15 +254,15 @@ def display_photo_grid(photos, category):
 
     # 全画面表示
     if st.session_state.show_fullscreen and st.session_state.fullscreen_image:
-        st.markdown("""
+        st.markdown(f"""
         <div class="fullscreen-container">
             <button onclick="window.location.reload();" style="position: absolute; top: 20px; right: 20px; background: none; border: none; color: white; font-size: 24px; cursor: pointer;">✖</button>
-            <img src="data:image/png;base64,{}" class="fullscreen-image">
+            <img src="data:image/png;base64,{get_image_base64(st.session_state.fullscreen_image)}" class="fullscreen-image">
             <div style="margin-top: 20px;">
                 <button onclick="window.location.reload();" style="padding: 10px 20px; font-size: 16px;">閉じる</button>
             </div>
         </div>
-        """.format(get_image_base64(st.session_state.fullscreen_image)), unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
 def get_image_base64(image_path):
     """画像をBase64エンコードする"""
