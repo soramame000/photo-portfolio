@@ -9,6 +9,13 @@ from PIL.ExifTags import TAGS
 import logging
 import shutil
 import time
+from dotenv import load_dotenv
+
+# 環境変数の読み込み
+load_dotenv()
+
+# パスワードを環境変数から取得
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', 'default_password')
 
 # 定数定義
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -345,6 +352,23 @@ def initialize_session_state():
     if 'authenticated' not in st.session_state:
         st.session_state.authenticated = False
 
+def check_password():
+    """パスワード認証"""
+    if "authenticated" not in st.session_state:
+        st.session_state.authenticated = False
+        
+    if not st.session_state.authenticated:
+        password = st.text_input("パスワードを入力してください", type="password")
+        if st.button("ログイン"):
+            if password == ADMIN_PASSWORD:
+                st.session_state.authenticated = True
+                st.success("ログインしました")
+                st.rerun()
+            else:
+                st.error("パスワードが違います")
+        return False
+    return True
+
 def main():
     initialize_session_state()
     
@@ -670,7 +694,7 @@ def manage_site_settings():
                 "title": title,
                 "description": description
             })
-            st.success("サイト設定を��新しました")
+            st.success("サイト設定を新しました")
             st.rerun()
 
 def show_photo_management(category):
