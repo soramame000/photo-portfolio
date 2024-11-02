@@ -1,6 +1,6 @@
 streamlit==1.28.1
-Pillow==10.4.0
-numpy==2.1.2
-pandas==2.2.3
-requests==2.32.3
+Pillow==10.0.0
+numpy==1.24.3
+pandas==1.5.3
+requests==2.31.0
 watchdog==3.0.0
