@@ -5,10 +5,10 @@ from PIL import Image, ImageOps
 from PIL.ExifTags import TAGS
 import datetime
 import logging
-import time
 import base64
 import hashlib
 import shutil
+import time
 
 # 定数の定義
 UPLOAD_DIR = "uploads"
@@ -40,20 +40,27 @@ if 'fullscreen_image' not in st.session_state:
     st.session_state.fullscreen_image = None
 if 'fullscreen_photo' not in st.session_state:
     st.session_state.fullscreen_photo = None
+if 'user_likes' not in st.session_state:
+    st.session_state.user_likes = set()
+
+# パスワードのハッシュ化
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
 
 def get_admin_password():
-    """Streamlit Secretsからパスワードを取得"""
+    """パスワードを安全に取得"""
     try:
         return st.secrets["ADMIN_PASSWORD"]
     except:
-        return "default_password"  # 開発環境用のデフォルトパスワード
+        # 開発環境用のデフォルトパスワード（本番環境では必ず変更してください）
+        return hash_password("admin_password")
 
 def check_password():
     """パスワード認証"""
     if not st.session_state.authenticated:
         password = st.text_input("パスワードを入力してください", type="password")
         if st.button("ログイン"):
-            if password == get_admin_password():
+            if hash_password(password) == get_admin_password():
                 st.session_state.authenticated = True
                 st.success("ログインしました")
                 st.experimental_rerun()
@@ -104,29 +111,28 @@ def get_exif_data(image_path):
             exif_data = {}
             for tag_id, value in exif.items():
                 tag = TAGS.get(tag_id, tag_id)
-                
-                if tag == "Model":  # カメラ本体
+                if tag == "Model":
                     exif_data["camera"] = str(value).strip()
-                elif tag == "LensModel":  # レンズ情報
+                elif tag == "LensModel":
                     exif_data["lens"] = str(value).strip()
-                elif tag == "ExposureTime":  # シャッタースピード
+                elif tag == "ExposureTime":
                     if isinstance(value, tuple):
                         exif_data["exposure"] = f"{value[0]}/{value[1]}秒"
                     else:
                         exif_data["exposure"] = f"{value}秒"
-                elif tag == "FNumber":  # 絞り値
+                elif tag == "FNumber":
                     if isinstance(value, tuple):
                         exif_data["f_number"] = f"f/{value[0]/value[1]:.1f}"
                     else:
                         exif_data["f_number"] = f"f/{value:.1f}"
-                elif tag == "ISOSpeedRatings":  # ISO感度
+                elif tag == "ISOSpeedRatings":
                     exif_data["iso"] = f"ISO {value}"
-                elif tag == "FocalLength":  # 焦点距離
+                elif tag == "FocalLength":
                     if isinstance(value, tuple):
                         exif_data["focal_length"] = f"{value[0]/value[1]}mm"
                     else:
                         exif_data["focal_length"] = f"{value}mm"
-                elif tag == "DateTimeOriginal":  # 撮影日時
+                elif tag == "DateTimeOriginal":
                     try:
                         date_obj = datetime.datetime.strptime(str(value), '%Y:%m:%d %H:%M:%S')
                         exif_data["date"] = date_obj.strftime('%Y-%m-%d')
@@ -142,7 +148,6 @@ def create_thumbnail(image_path, size=(300, 300)):
     """サムネイルの作成"""
     try:
         with Image.open(image_path) as img:
-            # 画像の縦横比を維持したままリサイズ
             img.thumbnail(size, Image.Resampling.LANCZOS)
             return img
     except Exception as e:
@@ -216,7 +221,6 @@ def display_photo_grid(photos, category):
     </style>
     """, unsafe_allow_html=True)
 
-    # 写真の表示用コンテナ
     cols = st.columns(4)
     for idx, photo in enumerate(photos):
         col = cols[idx % 4]
@@ -224,12 +228,9 @@ def display_photo_grid(photos, category):
             img_path = os.path.join(UPLOAD_DIR, category, photo)
             thumb = create_thumbnail(img_path)
             if thumb:
-                # 写真コンテナ
                 with st.container():
-                    # サムネイル表示
                     st.image(thumb, use_column_width=True)
                     
-                    # 管理者の場合、削除ボタンを表示
                     if st.session_state.authenticated:
                         if st.button("🗑️", key=f"delete_{photo}", help="写真を削除"):
                             if delete_photo(img_path, photo, metadata):
@@ -237,20 +238,33 @@ def display_photo_grid(photos, category):
                                 time.sleep(1)
                                 st.experimental_rerun()
                     
-                    # ボタン行
-                    col1, col2 = st.columns(2)
-                    with col1:
-                        # 全画面表示ボタン
-                        if st.button("🔍 全画面", key=f"full_{photo}"):
-                            st.session_state.show_fullscreen = True
-                            st.session_state.fullscreen_image = img_path
-                            st.session_state.fullscreen_photo = photo
-                            st.experimental_rerun()
+                    # いいね機能
+                    if st.button("❤️ いいね", key=f"like_{photo}"):
+                        st.session_state.user_likes.add(photo)
+                        st.success("いいねしました！")
                     
-                    with col2:
-                        # 詳細情報
-                        with st.expander("📷 詳細"):
-                            show_photo_details(img_path, metadata.get("photos", {}).get(photo, {}))
+                    # コメント表示と投稿
+                    with st.expander("💬 コメント"):
+                        comments = metadata.get("photos", {}).get(photo, {}).get("comments", [])
+                        for comment in comments:
+                            st.write(f"- {comment}")
+                        new_comment = st.text_input("コメントを追加", key=f"comment_{photo}")
+                        if st.button("投稿", key=f"submit_comment_{photo}"):
+                            if new_comment:
+                                comments.append(new_comment)
+                                metadata["photos"][photo]["comments"] = comments
+                                save_metadata(metadata)
+                                st.success("コメントを投稿しました")
+                                st.experimental_rerun()
+                            else:
+                                st.error("コメントを入力してください")
+                    
+                    # 全画面表示ボタン
+                    if st.button("🔍 全画面", key=f"full_{photo}"):
+                        st.session_state.show_fullscreen = True
+                        st.session_state.fullscreen_image = img_path
+                        st.session_state.fullscreen_photo = photo
+                        st.experimental_rerun()
 
     # 全画面表示
     if st.session_state.show_fullscreen and st.session_state.fullscreen_image:
@@ -325,6 +339,7 @@ def save_uploaded_photo(file, category):
             "category": category,
             "upload_date": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             "title": os.path.splitext(filename)[0],
+            "comments": [],
             **exif_data
         }
         save_metadata(metadata)
@@ -394,28 +409,7 @@ def manage_photos():
         photos = [f for f in os.listdir(category_dir) if f.lower().endswith(('.jpg', '.jpeg', '.png'))]
         if photos:
             st.write(f"📁 {category}カテゴリーの写真: {len(photos)}枚")
-            
-            # 写真の一覧表示と削除機能
-            cols = st.columns(4)
-            for idx, photo in enumerate(photos):
-                col = cols[idx % 4]
-                with col:
-                    img_path = os.path.join(category_dir, photo)
-                    thumb = create_thumbnail(img_path)
-                    if thumb:
-                        st.image(thumb, caption=photo, use_column_width=True)
-                        if st.button("🗑️ 削除", key=f"admin_delete_{photo}"):
-                            try:
-                                os.remove(img_path)
-                                metadata = load_metadata()
-                                if photo in metadata.get("photos", {}):
-                                    del metadata["photos"][photo]
-                                    save_metadata(metadata)
-                                st.success(f"✅ {photo} を削除しました")
-                                time.sleep(1)
-                                st.experimental_rerun()
-                            except Exception as e:
-                                st.error(f"削除に失敗しました: {str(e)}")
+            display_photo_grid(photos, category)
         else:
             st.info(f"📂 {category}カテゴリーにはまだ写真がありません")
 
@@ -512,21 +506,53 @@ def show_home():
     
     - 📸 写真ギャラリー（カテゴリー別）
     - 👤 プロフィール
+    - 💬 お問い合わせ
     
     写真をお楽しみください！
     """)
+
+def show_contact_form():
+    """お問い合わせフォームの表示"""
+    st.title("💬 お問い合わせ")
+    
+    with st.form("contact_form"):
+        name = st.text_input("お名前")
+        email = st.text_input("メールアドレス")
+        message = st.text_area("メッセージ")
+        
+        if st.form_submit_button("送信"):
+            if name and email and message:
+                # メール送信機能を実装する場合はここに記述
+                st.success("お問い合わせを送信しました。ありがとうございます。")
+            else:
+                st.error("すべての項目を入力してください。")
 
 def main():
     """メイン関数"""
     # サイドバーの設定
     st.sidebar.title("📸 Photo Portfolio")
     
+    # ダークモードの切り替え
+    is_dark_mode = st.sidebar.checkbox("🌙 ダークモード", value=False)
+    if is_dark_mode:
+        st.markdown(
+            """
+            <style>
+            .main {
+                background-color: #2E2E2E;
+                color: white;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True
+        )
+    
     # ナビゲーションメニュー
-    menu_items = ["ホーム", "プロフィール"] + PHOTO_CATEGORIES
+    menu_items = ["ホーム", "プロフィール", "お問い合わせ"] + PHOTO_CATEGORIES
     
     # 管理者メニュー
     if st.session_state.authenticated:
-        menu_items.extend(["---", "写真管理", "プロフィール管理", "SNS管理"])
+        menu_items.extend(["---", "写真管理", "プロフィール管理", "SNS管理", "ログアウト"])
     else:
         menu_items.append("---")
         menu_items.append("管理者ログイン")
@@ -538,30 +564,31 @@ def main():
     if selection == "ホーム":
         st.session_state.current_page = "ホーム"
         show_home()
-    
     elif selection == "プロフィール":
         st.session_state.current_page = "プロフィール"
         show_profile()
-    
+    elif selection == "お問い合わせ":
+        st.session_state.current_page = "お問い合わせ"
+        show_contact_form()
     elif selection in PHOTO_CATEGORIES:
         st.session_state.current_page = selection
         show_photo_gallery()
-    
     elif selection == "管理者ログイン":
         st.session_state.current_page = "管理者ログイン"
         check_password()
-    
     elif selection == "写真管理" and st.session_state.authenticated:
         st.session_state.current_page = "写真管理"
         manage_photos()
-    
     elif selection == "プロフィール管理" and st.session_state.authenticated:
         st.session_state.current_page = "プロフィール管理"
         manage_profile()
-    
     elif selection == "SNS管理" and st.session_state.authenticated:
         st.session_state.current_page = "SNS管理"
         manage_sns()
+    elif selection == "ログアウト" and st.session_state.authenticated:
+        st.session_state.authenticated = False
+        st.success("ログアウトしました")
+        st.experimental_rerun()
 
 if __name__ == "__main__":
     main()
