@@ -33,3 +33,6 @@ tornado==6.4.1
 typing_extensions==4.12.2
 tzdata==2024.2
 urllib3==2.2.3
+streamlit==1.28.1
+Pillow==10.1.0
+watchdog==3.0.0
