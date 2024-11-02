@@ -1,0 +1,3 @@
+streamlit run photo_portfolio/app.py
+
+あなたの生成結果は60点です。100点にするために必要な点を列挙し、100点の生成をして

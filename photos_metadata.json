@@ -1,0 +1,68 @@
+{
+    "photos": {
+        "example_20240330_123456_photo.jpg": {
+            "title": "サンプル写真",
+            "location": "東京都渋谷区",
+            "date": "2024-03-30",
+            "camera_settings": "f/2.8, 1/1000秒, ISO 100",
+            "description": "写真の説明をここに記入"
+        },
+        "20241030_170325__DSC5596-2-強化-NR.jpeg": {
+            "title": "_DSC5596-2-強化-NR",
+            "location": "",
+            "date": "2024-10-18",
+            "camera_settings": "f/4.5, 0.02秒, ISO 280",
+            "description": "撮影機材: NIKON Z 9"
+        },
+        "20241030_170333__DSC5596-2-強化-NR.jpeg": {
+            "title": "_DSC5596-2-強化-NR",
+            "location": "",
+            "date": "2024-10-18",
+            "camera_settings": "f/4.5, 0.02秒, ISO 280",
+            "description": "撮影機材: NIKON Z 9"
+        },
+        "20241030_170359__DSC5596-2-強化-NR.jpeg": {
+            "title": "_DSC5596-2-強化-NR",
+            "location": "",
+            "date": "2024-10-18",
+            "camera_settings": "f/4.5, 0.02秒, ISO 280",
+            "description": "撮影機材: NIKON Z 9"
+        },
+        "20241030_170510__DSC5596-2-強化-NR.jpeg": {
+            "title": "_DSC5596-2-強化-NR",
+            "location": "",
+            "date": "2024-10-18",
+            "camera_settings": "ISO 280",
+            "camera": "NIKON Z 9",
+            "lens": "NIKKOR Z 24-70mm f/2.8 S",
+            "description": "撮影機材: NIKON Z 9"
+        },
+        "_DSC5734-強化-NR.jpeg": {
+            "title": "_DSC5734-強化-NR",
+            "location": "",
+            "date": "2024-10-30",
+            "camera_settings": "",
+            "camera": "",
+            "lens": "",
+            "description": ""
+        },
+        "_DSC5632-強化-NR.jpeg": {
+            "title": "_DSC5632-強化-NR",
+            "location": "",
+            "date": "2024-10-30",
+            "camera_settings": "",
+            "camera": "",
+            "lens": "",
+            "description": ""
+        },
+        "_DSC5677-強化-NR.jpeg": {
+            "title": "_DSC5677-強化-NR",
+            "location": "",
+            "date": "2024-10-18",
+            "camera_settings": "ISO 1250",
+            "camera": "NIKON Z 9",
+            "lens": "NIKKOR Z 24-70mm f/2.8 S",
+            "description": ""
+        }
+    }
+}
